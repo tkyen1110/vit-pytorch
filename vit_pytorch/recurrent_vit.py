@@ -18,13 +18,15 @@ def cast_tuple(val, length = 1):
 # helper classes
 
 class PreNormResidual(nn.Module):
-    def __init__(self, dim, fn):
+    def __init__(self, dim, fn, init_values=0.1):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
         self.fn = fn
+        self.gamma = nn.Parameter(init_values * torch.ones(dim)) # LayerScale
 
     def forward(self, x):
-        return self.fn(self.norm(x)) + x
+        post_norm = self.fn(self.norm(x)) * self.gamma
+        return post_norm + x
 
 class FeedForward(nn.Module):
     def __init__(self, dim, mult = 4, dropout = 0.):
@@ -222,7 +224,7 @@ class MaxViT(nn.Module):
         window_height = 6,
         window_width = 10,
         dim_head = 32,
-        dropout = 0.1,
+        dropout = 0.1
     ):
         super().__init__()
 
